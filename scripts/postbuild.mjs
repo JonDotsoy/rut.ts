@@ -42,3 +42,42 @@ for (const dir of DIRS) {
 }
 
 await writeFile('dist/cjs/package.json', '{"type":"commonjs"}\n')
+
+// Custom dist/package.json: a manifest derived from the root one, with entry
+// points rewritten relative to dist/ and dev-only fields (scripts,
+// devDependencies, lifecycle hooks) dropped.
+const root = JSON.parse(await readFile('package.json', 'utf8'))
+const rel = (p) => p.replace(/^\.\/dist\//, './')
+
+const distManifest = {
+  name: root.name,
+  version: root.version,
+  description: root.description,
+  author: root.author,
+  license: root.license,
+  homepage: root.homepage,
+  repository: root.repository,
+  bugs: root.bugs,
+  keywords: root.keywords,
+  type: root.type,
+  sideEffects: root.sideEffects,
+  engines: root.engines,
+  main: rel(root.main),
+  module: rel(root.module),
+  types: rel(root.types),
+  exports: {
+    '.': {
+      import: {
+        types: rel(root.exports['.'].import.types),
+        default: rel(root.exports['.'].import.default),
+      },
+      require: {
+        types: rel(root.exports['.'].require.types),
+        default: rel(root.exports['.'].require.default),
+      },
+    },
+    './package.json': './package.json',
+  },
+}
+
+await writeFile('dist/package.json', JSON.stringify(distManifest, null, 2) + '\n')
