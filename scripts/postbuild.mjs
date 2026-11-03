@@ -3,7 +3,7 @@
 //
 // Uses the terser API (rather than chained `terser` shell commands) so the
 // source-map options stay readable.
-import { readFile, writeFile, rm } from 'node:fs/promises'
+import { readFile, writeFile, rm, copyFile } from 'node:fs/promises'
 import { minify } from 'terser'
 
 const ENTRIES = ['index']
@@ -81,3 +81,8 @@ const distManifest = {
 }
 
 await writeFile('dist/package.json', JSON.stringify(distManifest, null, 2) + '\n')
+
+// Docs shipped alongside the dist manifest so `npm pack ./dist` is self-contained.
+for (const file of ['README.md', 'LICENSE', 'llms.txt']) {
+  await copyFile(file, `dist/${file}`)
+}
